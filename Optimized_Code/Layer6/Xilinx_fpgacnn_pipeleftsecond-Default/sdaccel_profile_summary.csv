@@ -1,0 +1,90 @@
+SDAccel Profile Summary
+Generated on: 2019-03-21 17:25:46
+Msec since Epoch: 1553160346221
+Profiled application: Xilinx_fpgacnn_pipeleftsecond.exe
+Target platform: Xilinx
+Target devices: xilinx:adm-pcie-7v3:1ddr:3.0-0
+Flow mode: System Run
+Tool version: 2016.3
+
+OpenCL API Calls
+API Name,Number Of Calls,Total Time (ms),Minimum Time (ms),Average Time (ms),Maximum Time (ms),
+clCreateProgramWithBinary,1,2467.34,2467.34,2467.34,2467.34,
+clCreateContext,1,1641.21,1641.21,1641.21,1641.21,
+clFinish,1,5.69253,5.69253,5.69253,5.69253,
+clEnqueueWriteBuffer,2,0.783244,0.341877,0.391622,0.441367,
+clEnqueueReadBuffer,1,0.568978,0.568978,0.568978,0.568978,
+clGetPlatformIDs,3,0.0977,0.008794,0.0325667,0.047992,
+clSetKernelArg,6,0.078335,0.011566,0.0130558,0.019399,
+clCreateBuffer,3,0.074436,0.01583,0.024812,0.041048,
+clEnqueueNDRangeKernel,1,0.052958,0.052958,0.052958,0.052958,
+clReleaseMemObject,3,0.03981,0.011474,0.01327,0.016514,
+clCreateKernel,1,0.036237,0.036237,0.036237,0.036237,
+clCreateCommandQueue,1,0.028977,0.028977,0.028977,0.028977,
+clGetEventProfilingInfo,2,0.02738,0.011766,0.01369,0.015614,
+clGetDeviceInfo,2,0.022305,0.010614,0.0111525,0.011691,
+clBuildProgram,1,0.01981,0.01981,0.01981,0.01981,
+clGetPlatformInfo,2,0.019321,0.008577,0.0096605,0.010744,
+clReleaseCommandQueue,1,0.012748,0.012748,0.012748,0.012748,
+clReleaseProgram,1,0.012736,0.012736,0.012736,0.012736,
+clReleaseKernel,1,0.012618,0.012618,0.012618,0.012618,
+clReleaseContext,1,0.012561,0.012561,0.012561,0.012561,
+clGetDeviceIDs,1,0.010118,0.010118,0.010118,0.010118,
+
+
+Kernel Execution
+Kernel,Number Of Enqueues,Total Time (ms),Minimum Time (ms),Average Time (ms),Maximum Time (ms),
+good_cnn,1,5.43484,5.43484,5.43484,5.43484,
+
+
+Compute Unit Utilization
+Device,Compute Unit,Kernel,Global Work Size,Local Work Size,Number Of Calls,Total Time (ms),Minimum Time (ms),Average Time (ms),Maximum Time (ms),
+xilinx:adm-pcie-7v3:1ddr:3.0-0,good_cnn_1,good_cnn,4:1:1,1:1:1,1,5.00318,5.00318,5.00318,5.00318,
+xilinx:adm-pcie-7v3:1ddr:3.0-0,good_cnn_2,good_cnn,4:1:1,1:1:1,1,5.16137,5.16137,5.16137,5.16137,
+xilinx:adm-pcie-7v3:1ddr:3.0-0,good_cnn_3,good_cnn,4:1:1,1:1:1,1,5.04106,5.04106,5.04106,5.04106,
+xilinx:adm-pcie-7v3:1ddr:3.0-0,good_cnn_4,good_cnn,4:1:1,1:1:1,1,5.09516,5.09516,5.09516,5.09516,
+
+
+Data Transfer: Host and Global Memory
+Context:Number of Devices,Transfer Type,Number Of Transfers,Transfer Rate (MB/s),Average Bandwidth Utilization (%),Average Size (KB),Total Time (ms),Average Time (ms),
+context0:1,READ,1,911.746385,9.497358,373.248,0.409377,0.409377,
+context0:1,WRITE,2,1125.771499,11.726786,180.576,0.320804,0.160402,
+
+
+Data Transfer: Kernels and Global Memory
+Device,Transfer Type,Number Of Transfers,Transfer Rate (MB/s),Average Bandwidth Utilization (%),Average Size (KB),Average Time (ns),
+xilinx:adm-pcie-7v3:1ddr:3.0-0,READ,12204,143.713,1.24751,0.064,1546.85,
+xilinx:adm-pcie-7v3:1ddr:3.0-0,WRITE,5931,68.677,0.596154,0.0629317,31.2394,
+
+
+Top Data Transfer: Kernels and Global Memory
+Device,Kernel Name,Number of Transfers,Average Bytes per Transfer,Transfer Efficiency (%),Total Data Transfer (MB),Total Write (MB),Total Read (MB),Transfer Rate (MB/s),Average Bandwidth Utilization (%),
+xilinx:adm-pcie-7v3:1ddr:3.0-0,ALL,18135,63.6506,1.55397,1.1543,0.373248,0.781056,106.195,0.921831,
+
+
+Top Kernel Execution
+Kernel Instance Address,Kernel,Context ID,Command Queue ID,Device Name,Start Time (ms),Duration (ms),Global Work Size,Local Work Size,
+34598120,good_cnn,0,0,xilinx:adm-pcie-7v3:1ddr:3.0-0,4139.8,5.43484,4:1:1,1:1:1,
+
+
+Top Buffer Writes
+Buffer Address,Context ID,Command Queue ID,Start Time (ms),Duration (ms),Buffer Size (KB),Writing Rate(MB/s),
+34603584,0,0,4139.04,0.190834,221.184,1159.038746,
+34612160,0,0,4138.63,0.129970,139.968,1076.925444,
+
+
+Top Buffer Reads
+Buffer Address,Context ID,Command Queue ID,Start Time (ms),Duration (ms),Buffer Size (KB),Reading Rate(MB/s),
+34608464,0,0,4145.5,0.409377,373.248,911.746385,
+
+
+PRC Parameters
+Parameter,Element,Value,
+DEVICE_EXEC_TIME,xilinx:adm-pcie-7v3:1ddr:3.0-0,5.434835,
+CU_CALLS,xilinx:adm-pcie-7v3:1ddr:3.0-0|good_cnn_1,1,
+CU_CALLS,xilinx:adm-pcie-7v3:1ddr:3.0-0|good_cnn_2,1,
+CU_CALLS,xilinx:adm-pcie-7v3:1ddr:3.0-0|good_cnn_3,1,
+CU_CALLS,xilinx:adm-pcie-7v3:1ddr:3.0-0|good_cnn_4,1,
+MEMORY_BIT_WIDTH,xilinx:adm-pcie-7v3:1ddr:3.0-0,512,
+
+
