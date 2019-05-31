@@ -50,33 +50,28 @@ Description:
 
 #define DATA_SIZE OChan * OSize * OSize
 
-// Software solution
 void convGolden(int *weight, int *image, int *out, int i_chan, int o_chan)
 {
-    // Runs over output filters
     for(int output = 0; output < o_chan; output++){
-        // Runs over output pixel in Y-direction
+
         for(int y = 0; y < OSize; y++){
-            // Runs over output pixel in X-direction
+
             for(int x = 0; x < OSize; x++){
                 short acc = 0;
-                // Runs over each input channel of input feature map
+
                 for(int input = 0; input < i_chan; input++){
-                    // Runs over filter window 
+ 
                     for(int i = 0; i < WSize; i++){
-                        // Runs over filter windows 
+
                         for(int j = 0; j < WSize; j++){
 
-                            // Calculate input padding boundaries
                             int xVal = x*Stride + j-Padding, yVal = y*Stride + i-Padding;
 
-                            // Convolution operation
                             if(yVal >= 0 && yVal < ISize && xVal >= 0 && xVal < ISize){
                                 acc += (short) image[(input*ISize + yVal)*ISize + xVal] * 
                                        (short) weight[((output*WInChan + input)*WSize + i)*WSize + j];
                             }
                         }
-                        // Update each output pixel / output filter
                         out[(output*OSize + y)*OSize + x] = acc;
                     }
                 }
@@ -104,16 +99,13 @@ unsigned long run_opencl_cnn(
     size_t weight_size_bytes = sizeof(int) * o_chan * WInChan * WSize * WSize;
     size_t output_size_bytes = sizeof(int) * o_chan * OSize * OSize;
 
-    // Allocate Buffer in Global Memory
     cl_mem buffer_image    = xcl_malloc(world, CL_MEM_READ_ONLY, image_size_bytes);
     cl_mem buffer_weight   = xcl_malloc(world, CL_MEM_READ_ONLY, weight_size_bytes);
     cl_mem buffer_output   = xcl_malloc(world, CL_MEM_WRITE_ONLY, output_size_bytes);
 
-    //Copy input data to device global memory
     xcl_memcpy_to_device(world, buffer_image, image, image_size_bytes);
     xcl_memcpy_to_device(world,buffer_weight,weight, weight_size_bytes);
 
-    //Set the Kernel Arguments
     int narg = 0;
     xcl_set_kernel_arg(krnl_cnn_conv, narg++, sizeof(cl_mem), &buffer_image);
     xcl_set_kernel_arg(krnl_cnn_conv, narg++, sizeof(cl_mem), &buffer_weight);
@@ -131,19 +123,16 @@ unsigned long run_opencl_cnn(
         int work_item_per_group = WORK_ITEM_PER_GROUP;
 
         int err = 0; 
-        
-        //Declare global & local Grids
+  
         cl_uint dimension = 1;
         size_t global_size[dimension];
         size_t local_size[dimension];
 
-        //Set global & local grids
         global_size[0] = work_group;
         local_size[0]  = work_item_per_group;
 
         cl_event event;
 
-        //Launch the Kernel
         err = clEnqueueNDRangeKernel(world.command_queue, krnl_cnn_conv, 1, NULL, global_size, local_size, 0, NULL, &event);
         if(err != CL_SUCCESS){
             printf("Error: failed to execute kernel! %d\n", err);
@@ -154,12 +143,10 @@ unsigned long run_opencl_cnn(
 
         duration = xcl_get_event_duration(event);
     } else {
-        // Launch a single thread to perform the same computation
-        // The kernel takes care of running over the whole data set
+
         duration = xcl_run_kernel3d(world, krnl_cnn_conv, 1, 1, 1);
     }
 
-    //Copy Result from Device Global Memory to Host Local Memory
     xcl_memcpy_from_device(world, output, buffer_output, output_size_bytes);
 
     std::cout << "Finished " << (good ? "GOOD" : "BAD") << " Kernel" << std::endl;
@@ -192,7 +179,6 @@ int main(int argc, char** argv)
         printf("\t#Weight_Output_Channels (WOutChan) = %d (Original : 256)\n\n", o_chan);
     }
 
-    // Allocate Memory in Host (Image, Weights and Output)
     size_t image_size_bytes  = sizeof(int) * i_chan * ISize * ISize;
     size_t weight_size_bytes = sizeof(int) * o_chan * WInChan * WSize * WSize;
     size_t output_size_bytes = sizeof(int) * o_chan * OSize * OSize;
@@ -203,7 +189,6 @@ int main(int argc, char** argv)
     int *source_bad_hw_results  = (int *) malloc(output_size_bytes); assert(source_bad_hw_results);
     int *source_sw_results      = (int *) malloc(output_size_bytes); assert(source_sw_results);
 
-    // Initialize Image, Weights & Output Host Buffers
     for(int i = 0; i < i_chan*ISize*ISize; i++)
         image[i] = i%255;
 
@@ -225,12 +210,8 @@ int main(int argc, char** argv)
     unsigned long good_duration = run_opencl_cnn(world, true, size,
         weight, image, source_good_hw_results, i_chan, o_chan);
 
-   //unsigned long bad_duration = run_opencl_cnn(world, false, size,
-     //   weight, image, source_bad_hw_results, i_chan, o_chan);
-
     xcl_release_world(world);
 
-    // Compare the results of the Device to the simulation
     int match = 0;
     for (int i = 0 ; i < size; i++){
         if (source_good_hw_results[i] != source_sw_results[i]){
@@ -240,18 +221,8 @@ int main(int argc, char** argv)
             match = 1;
             break;
         }
-        /*
-        if (source_bad_hw_results[i] != source_sw_results[i]){
-            std::cout << "Error: Result mismatch in bad kernel" << std::endl;
-            std::cout << "i = " << i << " CPU result = " << source_sw_results[i]
-                << " Device result = " << source_bad_hw_results[i] << std::endl;
-            match = 1;
-            break;
-        }
- 	 */
     }
 
-    /* Release Memory from Host Memory*/
     free(image);
     free(weight);
     free(source_good_hw_results);
@@ -259,7 +230,6 @@ int main(int argc, char** argv)
     free(source_sw_results);
 
     std::cout << "GOOD duration = " << good_duration << " ns" << std::endl;
-    //std::cout << "BAD duration = "  << bad_duration  << " ns" << std::endl;
 
     std::cout << "TEST " << (match ? "FAILED" : "PASSED") << std::endl; 
     return (match ? EXIT_FAILURE :  EXIT_SUCCESS);
