@@ -100,27 +100,20 @@ xcl_world xcl_world_single_vendor(const char* vendor_name) {
 	char *xcl_mode = getenv("XCL_EMULATION_MODE");
 	char *xcl_target = getenv("XCL_TARGET");
 
-	/* Fall back mode if XCL_EMULATION_MODE is not set is "hw" */
 	if(xcl_mode == NULL) {
 		world.mode = xcl_create_and_set("hw");
 	} else {
-		/* if xcl_mode is set then check if it's equal to true*/
 		if(strcmp(xcl_mode,"true") == 0) {
-			/* if it's true, then check if xcl_target is set */
 			if(xcl_target == NULL) {
-				/* default if emulation but not specified is software emulation */
 				world.mode = xcl_create_and_set("sw_emu");
 			} else {
-				/* otherwise, it's what ever is specified in XCL_TARGET */
+				
 				world.mode = xcl_create_and_set(xcl_target);
 			}
 		} else {
-			/* if it's not equal to true then it should be whatever
-			 * XCL_EMULATION_MODE is set to */
 			world.mode = xcl_create_and_set(xcl_mode);
 		}
 
-		/* TODO: Remove once 2016.4 is released */
 		err = setenv("XCL_EMULATION_MODE", "true", 1);
 		if(err != 0) {
 			printf("Error: cannot set XCL_EMULATION_MODE\n");
@@ -299,12 +292,11 @@ char *xcl_get_xclbin_name(xcl_world world,
 ) {
 	char *xcl_bindir = getenv("XCL_BINDIR");
 
-	// typical locations of directory containing xclbin files
 	const char *dirs[] = {
-		xcl_bindir, // $XCL_BINDIR-specified
-		"xclbin",   // command line build
-		"..",       // gui build + run
-		".",        // gui build, run in build directory
+		xcl_bindir, 
+		"xclbin",   
+		"..",       
+		".",       
 		NULL
 	};
 	const char **search_dirs = dirs;
@@ -318,8 +310,6 @@ char *xcl_get_xclbin_name(xcl_world world,
 		exit(EXIT_FAILURE);
 	}
 
-	// fix up device name to avoid colons and dots.
-	// xilinx:xil-accel-rd-ku115:4ddr-xpr:3.2 -> xilinx_xil-accel-rd-ku115_4ddr-xpr_3_2
 	for (char *c = device_name; *c != 0; c++) {
 		if (*c == ':' || *c == '.') {
 			*c = '_';
@@ -347,18 +337,18 @@ char *xcl_get_xclbin_name(xcl_world world,
 	}
 
 	const char *aws_file_patterns[] = {
-		"%1$s/%2$s.%3$s.%4$s.awsxclbin",     // <kernel>.<target>.<device>.awsxclbin
-		"%1$s/%2$s.%3$s.%5$s.awsxclbin",     // <kernel>.<target>.<device_versionless>.awsxclbin
-		"%1$s/binary_container_1.awsxclbin", // default for gui projects
-		"%1$s/%2$s.awsxclbin",               // <kernel>.awsxclbin
+		"%1$s/%2$s.%3$s.%4$s.awsxclbin",    
+		"%1$s/%2$s.%3$s.%5$s.awsxclbin",   
+		"%1$s/binary_container_1.awsxclbin", 
+		"%1$s/%2$s.awsxclbin",               
 		NULL
 	};
   
 	const char *file_patterns[] = {
-		"%1$s/%2$s.%3$s.%4$s.xclbin",     // <kernel>.<target>.<device>.xclbin
-		"%1$s/%2$s.%3$s.%5$s.xclbin",     // <kernel>.<target>.<device_versionless>.xclbin
-		"%1$s/binary_container_1.xclbin", // default for gui projects
-		"%1$s/%2$s.xclbin",               // <kernel>.xclbin
+		"%1$s/%2$s.%3$s.%4$s.xclbin",     
+		"%1$s/%2$s.%3$s.%5$s.xclbin",    
+		"%1$s/binary_container_1.xclbin", 
+		"%1$s/%2$s.xclbin",              
 		NULL
 	};
 	char *xclbin_file_name = (char*) malloc(sizeof(char)*PATH_MAX);
@@ -387,8 +377,7 @@ char *xcl_get_xclbin_name(xcl_world world,
 			}
 		}
 	}
-	ino_t ino = 0; // used to avoid errors if an xclbin found via multiple/repeated paths
-	// if no awsxclbin found, check for xclbin
+	ino_t ino = 0; 
 	if (*xclbin_file_name == '\0') {
 	    for (const char **dir = search_dirs; *dir != NULL; dir++) {
 		    struct stat sb;
@@ -415,7 +404,6 @@ char *xcl_get_xclbin_name(xcl_world world,
 	    }
 
 	}
-	// if no xclbin found, preferred path for error message from xcl_import_binary_file()
 	if (*xclbin_file_name == '\0') {
 	    snprintf(xclbin_file_name, PATH_MAX, file_patterns[0], *search_dirs, xclbin_name, world.mode, device_name);
     }
