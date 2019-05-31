@@ -104,11 +104,8 @@ Kernel Description (Good Example) :
 
 void __attribute__((always_inline)) copy_weight(__global int *weight, int wgt_lcl[WInChan][WSize * WSize], int output)
 {
-    // Calculate each work_item's weight matrix location 
     int stride = output * WInChan * WSize * WSize;
-    //__local int local_weight[WInChan * WSize * WSize];
-    //async_work_group_copy(local_weight, weight+stride, WInChan * WSize * WSize, 0);
-    // Each work_item copies its weight data from DDR to local buffers
+
     __attribute__((xcl_pipeline_loop))
     readWt: for(int itr = 0, i = 0, j = 0; itr < WInChan * WSize * WSize; itr++,j++) {
         if(j == WSize * WSize) {j = 0; i++;}
@@ -118,10 +115,8 @@ void __attribute__((always_inline)) copy_weight(__global int *weight, int wgt_lc
 
 void __attribute__((always_inline)) copy_output(__global int *out, int out_lcl[OSize * OSize], int output)
 {
-    // Calculate each work_item's result update location
     int stride = output * OSize * OSize;
-    
-    // Work_item updates output filter/image in DDR
+ 
     __attribute__((xcl_pipeline_loop))
     writeOut: for(int itr = 0; itr < OSize * OSize; itr++) {
         out[stride + itr] = out_lcl[itr];
@@ -131,23 +126,18 @@ void __attribute__((always_inline)) copy_output(__global int *out, int out_lcl[O
 void __attribute__((always_inline))
     convolution_operation(int img_lcl[IChan][ISize * ISize], int wgt_lcl[WInChan][WSize * WSize], int out_lcl[OSize * OSize],int output, int y, int x, int i_chan)
 {
-    // Holds temporary accumulator values
     short acc[IChan][WSize][WSize]
     __attribute__((xcl_array_partition(complete,1)));
 
-    // Holds Image Padding Boundary Check Variables
     int xVal_base = x * Stride - Padding;
     int yVal = y * Stride - Padding;
 
-    // Runs over filter window
     __attribute__((xcl_pipeline_loop))
     convYaxis: for(int i = 0; i < WSize; i++,yVal++){
-        // Runs over filter window
         convXaxis: for(int j = 0, xVal = xVal_base ; j < WSize; j++, xVal++){
-            // Runs over each of the input channels
             convInchan: for(int input = 0; input < IChan; input++) {
 
-                // Convolution operation
+                
                 if(yVal >= 0 && yVal < ISize && xVal >= 0 && xVal < ISize) {
                     acc[input][i][j] =  (short) img_lcl[input][yVal * ISize + xVal] *
                                         (short) wgt_lcl[input][i * WSize + j];
@@ -159,7 +149,7 @@ void __attribute__((always_inline))
         }
     }
     
-    // Summation of temporary accumulator buffer
+    
     short sum = 0;
     __attribute__((xcl_pipeline_loop))
     accJ: for(int j = 0; j < WSize;j++)
@@ -167,69 +157,52 @@ void __attribute__((always_inline))
             accI: for(int i = 0; i < IChan; i++)
                 sum += acc[i][j][k];
 
-    // Update output pixel
+    
     out_lcl[y * OSize + x] = sum;
 }
 
 __kernel __attribute__ ((reqd_work_group_size(1, 1, 1)))
 void good_cnn(
-        const __global int *image,      // Read-Only Image 
-        const __global int *weights,    // Read-Only Weight Matrix
-        __global int *out,              // Output Filters/Images
-        int size,                       // Size of Output Data
-        int i_chan,                     // Input Channels
-        int o_chan                      // Output Channels
+        const __global int *image,      
+        const __global int *weights,    
+        __global int *out,              
+        int size,                       
+        int i_chan,                    
+        int o_chan                      
     )
 {
-    int global_id      = get_global_id(0);         // Picks Work Item global ID
-    int global_threads = get_global_size(0);       // Picks Total Threads
-    
-    // Local Buffer to Hold Input Image
+    int global_id      = get_global_id(0);         
+    int global_threads = get_global_size(0);       
+
     int img_lcl[IChan][ISize * ISize] __attribute__((xcl_array_partition(complete,1)));
 
-    // Local Buffer to Hold Output Filters/Images
     int out_lcl[OSize * OSize];
 
-    // Local Buffer to Hold Weight Matrix;
     int wgt_lcl[WInChan][WSize * WSize] __attribute__((xcl_array_partition(complete,1)));
     
-    // Copy image data from DDR to local buffer per work group (Burst Mode)
     __attribute__((xcl_pipeline_loop))
     imgcopy:for(int itr = 0, i = 0, j = 0; itr < IChan * ISize * ISize; itr++, j++){
         if(j == ISize * ISize) {j = 0; i++;}
             img_lcl[i][j] = image[itr];
     }
 
-    // Calculate each work_item's start and end point (Output Filters/Images)
     int thread_work_start = global_id * o_chan / global_threads;
     int thread_work_end   = (global_id + 1) * o_chan / global_threads;
     
-    // Operate on Image Feature Maps & Weight Matrix to produce Output Feature
-    // Maps. This Algorithm Operates on Large Weight Matrix Data. This example
-    // uses OpenCL Work_Group/Work_Items concept to create multiple instances
-    // of kernel Compute Units.
-    // 
-    // Description :
-    //       
-    //          outthread : This Loop Operates on Output Filters/Images. Based
-    //                      on the work load, Each WorkItem is responsible for
-    //                      producing output Filters/Images.
-    //          outYaxis  : This Loop Operates on Output Filter/Image Y Axis
-    //          outXaxis  : This Loop Operates on Output Filter/Image X Axis
-    
+   
     outthread:for(int output = thread_work_start; output < thread_work_end; output++) {
             
-        // Burst read weight data from global to local buffer
+        
         copy_weight(weights, wgt_lcl, output);
 
         outYaxis:for(int y = 0; y < OSize; y++) {
             outXaxis:for(int x = 0; x < OSize; x++) {
-               // Perform convolution for the current 'pixel'
+               
                convolution_operation(img_lcl, wgt_lcl, out_lcl, output, y, x, i_chan);
             }
         }
         
-        // Burst write output
+     
         copy_output(out, out_lcl, output);
     }
 
